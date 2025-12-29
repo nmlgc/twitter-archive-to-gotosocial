@@ -1,6 +1,7 @@
 from pathlib import Path
 from tqdm import tqdm
 from time import sleep
+from urllib.parse import urlparse
 import datetime
 import json
 import re
@@ -111,9 +112,16 @@ for tweet in tqdm(tweets):
             # upload media to append to the post
             media_ids = []
             for media in tweet["extended_entities"]["media"]:
-                image_path = f"{MEDIA_DIR}{tweet['id']}-{media['media_url_https'].split('/')[-1]}"
-                if not Path(image_path).is_file():
-                    continue
+                image_path = None
+                if "video_info" in media:
+                    for variant in media['video_info']['variants']:
+                        url = urlparse(variant['url'])
+                        variant_path = f"{MEDIA_DIR}{tweet['id']}-{url.path.split('/')[-1]}"
+                        if Path(variant_path).is_file():
+                            image_path = variant_path
+                            break
+                else:
+                    image_path = f"{MEDIA_DIR}{tweet['id']}-{media['media_url_https'].split('/')[-1]}"
                 file = open(image_path, "rb")
                 data = file.read()
                 url = f"{API_BASE_URL}/api/v2/media"
