@@ -105,7 +105,6 @@ for tweet in tqdm(tweets):
                     url = f"{API_BASE_URL}/api/v2/media"
                     files = {"file": (image_path, data, "application/octet-stream")}
                     r = requests.post(url, files=files, headers=HEADERS)
-                    sleep(1)
                     json_data = r.json()
                     media_ids.append(json_data["id"])
                     toot["status"] = toot["status"].replace(media["url"], "")
@@ -123,7 +122,6 @@ for tweet in tqdm(tweets):
                     print("======= FAILED!! ======= Error: ")
                     print(err)
                     pass
-            sleep(1)
             posted = post_status(toot)
             print("POSTED!!")
             print(posted)

@@ -5,6 +5,7 @@
 # twitter-archive-to-gotosocial
 
 This is a Python3 script you can use to import your [Twitter archive](https://help.twitter.com/en/managing-your-account/how-to-download-your-twitter-archive) into a GoToSocial instance you have API access to.
+It assumes that you own the instance and have disabled rate limits by setting `advanced-rate-limit-requests` to `0`.
 
 When migrating archived Tweets to GoToSocial, this script will do the following:
 * Upload media
