@@ -1,5 +1,5 @@
 from pathlib import Path
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 from time import sleep
 import datetime
 import json

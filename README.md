@@ -189,9 +189,7 @@ Near the top of `import.py` are some variables you need to update:
 * `TWITTER_USERNAME` is your Twitter username (no @). This is used to track your threads.
 
 #### Dependencies
-Have Python3 and Pip installed.
-
-Using pip, install `requests`, `tqdm`, and `ipywidgets`
+Have Python3 and Pip installed. Install `requests` using pip.
 
 #### Run
 After updating the configs and installing the dependencies, simply run `python3 import.py` and hopefully it works!
