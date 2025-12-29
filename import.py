@@ -13,6 +13,8 @@ DATA_DIR = "../data/"  # Unzipped twitter data export
 MEDIA_DIR = "../data/tweets_media/"  # media folder of twitter data export
 TWITTER_USERNAME = "YourTwitterUsername"
 
+IDS_DICT_FN = "ids_dict.json"
+
 # Test GoToSocial bearer token
 url = f"{API_BASE_URL}/api/v1/apps/verify_credentials"
 HEADERS = {"Authorization": f"Bearer {GTS_ACCESS_TOKEN}"}
@@ -38,6 +40,25 @@ def load_tweets():
     tweets = [tweet["tweet"] for tweet in tweets]
     tweets = sorted(tweets, key=lambda d: int(d["id"]))
     return tweets
+
+
+def load_ids_dict():
+    try:
+        with open(IDS_DICT_FN, "r") as f:
+            return json.load(f)
+    except:
+        return {}
+
+
+def save_ids_dict():
+    with open(IDS_DICT_FN, "w") as f:
+        f.write(json.dumps(
+            ids_dict,
+            ensure_ascii=False,
+            indent='\t',
+            separators=(',', ': '),
+            sort_keys=True
+        ))
 
 
 def to_timestamp(created_at):
@@ -74,16 +95,16 @@ def tweet_to_toot(tweet):
 
 
 tweets = load_tweets()
-ids_dict = {}
+ids_dict = load_ids_dict()
 counter = 0
 
 for tweet in tqdm(tweets):
     print("Tweet number " + str(counter))
     counter += 1
-    print(tweet)
     if tweet["id"] in ids_dict:
         # was already posted, we can skip it
         continue
+    print(tweet)
     try:
         toot = tweet_to_toot(tweet)
         if "media" in tweet["entities"]:
@@ -120,10 +141,10 @@ for tweet in tqdm(tweets):
         print("POSTED!!")
         print(posted)
         ids_dict[tweet["id"]] = posted["id"]
+        save_ids_dict()
     except Exception as err:
         print("======= FAILED!! ======= Error: ")
         print(err)
         pass
 
-with open("ids_dict.txt", "w") as f:
-    f.write(json.dumps(ids_dict))
+save_ids_dict()
