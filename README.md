@@ -9,7 +9,7 @@ It assumes that you own the instance and have disabled rate limits by setting `a
 Progress is persisted in the form of a tweet→toot mapping in `ids_dict.json`, allowing the import to be arbitrarily aborted and resumed.
 
 When migrating archived Tweets to GoToSocial, this script will do the following:
-* Upload media
+* Upload media, including videos
 * t.co short URLs are replaced with their targets
 * Replace @username with @username@twitter.com
 * Threads are recreated as threads, though this is fragile; threads may sometimes have missing posts
