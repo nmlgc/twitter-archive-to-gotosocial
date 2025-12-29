@@ -12,8 +12,6 @@ When migrating archived Tweets to GoToSocial, this script will do the following:
 * t.co short URLs are replaced with their targets
 * Replace @username with @username@twitter.com
 * Threads are recreated as threads, though this is fragile; threads may sometimes have missing posts
-* Retweets are skipped (I figure you wouldn't want these on your profile anyway)
-* Replies and tweets that start with "@" are skipped
 
 Limitations:
 * ⚠️ Private Twitter Circle tweets will become public toots!
