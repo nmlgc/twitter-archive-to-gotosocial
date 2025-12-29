@@ -8,22 +8,22 @@ import requests
 
 # UPDATE THESE VARIABLES
 API_BASE_URL = "https://example.com"
-MASTODON_ACCESS_TOKEN = ""
+GTS_ACCESS_TOKEN = ""
 DATA_DIR = "../data/"  # Unzipped twitter data export
 MEDIA_DIR = "../data/tweets_media/"  # media folder of twitter data export
 TWITTER_USERNAME = "YourTwitterUsername"
 
-# Test Mastodon bearer token
+# Test GoToSocial bearer token
 url = f"{API_BASE_URL}/api/v1/apps/verify_credentials"
-HEADERS = {"Authorization": f"Bearer {MASTODON_ACCESS_TOKEN}"}
+HEADERS = {"Authorization": f"Bearer {GTS_ACCESS_TOKEN}"}
 r = requests.get(url, headers=HEADERS)
 
 print(r)
 
 def post_status(data):
     HEADERS = {
-        "Authorization": f"Bearer {MASTODON_ACCESS_TOKEN}",
-        "Idempotency-Key": data["created_at"],
+        "Authorization": f"Bearer {GTS_ACCESS_TOKEN}",
+        "Idempotency-Key": data["scheduled_at"],
     }
     url = f"{API_BASE_URL}/api/v1/statuses"
     r = requests.post(url, data=data, headers=HEADERS)
@@ -67,7 +67,7 @@ def tweet_to_toot(tweet):
     toot = {
         "status": replace_usernames(replace_urls(tweet)),
         "visibility": "public",
-        "created_at": to_timestamp(tweet["created_at"]),
+        "scheduled_at": to_timestamp(tweet["created_at"]),
         "language": tweet["lang"],
     }
     return toot
