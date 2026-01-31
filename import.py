@@ -60,6 +60,11 @@ def save_ids_dict():
         ))
 
 
+def url_basename(url: str):
+    u = urlparse(url)
+    return u.path.split('/')[-1]
+
+
 def to_timestamp(created_at):
     timestamp = datetime.datetime.strptime(created_at, "%a %b %d %X %z %Y").isoformat(
         timespec="seconds"
@@ -113,8 +118,8 @@ for tweet in tqdm(tweets):
                 image_path = None
                 if "video_info" in media:
                     for variant in media['video_info']['variants']:
-                        url = urlparse(variant['url'])
-                        variant_path = f"{MEDIA_DIR}{tweet['id']}-{url.path.split('/')[-1]}"
+                        basename = url_basename(variant['url'])
+                        variant_path = f"{MEDIA_DIR}{tweet['id']}-{basename}"
                         if Path(variant_path).is_file():
                             image_path = variant_path
                             break
