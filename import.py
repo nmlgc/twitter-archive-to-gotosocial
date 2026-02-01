@@ -12,6 +12,7 @@ GTS_ACCESS_TOKEN = ""
 DATA_DIR = "../data/"  # Unzipped twitter data export
 MEDIA_DIR = "../data/tweets_media/"  # media folder of twitter data export
 TWITTER_USERNAME = "YourTwitterUsername"
+NITTER_BASE_URL = None
 
 IDS_DICT_FN = "ids_dict.json"
 
@@ -98,6 +99,30 @@ def tweet_to_toot(tweet):
     return toot
 
 
+if NITTER_BASE_URL is not None:
+    from bs4 import BeautifulSoup
+
+    def fetch_from_nitter(rel_url: str):
+        html = requests.get(f"{NITTER_BASE_URL}{rel_url}")
+        return BeautifulSoup(html.content, "html.parser")
+
+    def fetch_alt_text(expanded_url: str, media_url: str):
+        bs = fetch_from_nitter(expanded_url.removeprefix("https://x.com"))
+        if not bs:
+            return ""
+
+        # Also remove the extension to allow imports with re-encoded images.
+        basename = Path(url_basename(media_url)).stem
+
+        img = bs.find("img", src=lambda x: basename in x)
+        if not img:
+            return ""
+        return img.get("alt")
+else:
+    def fetch_alt_text(expanded_url: str, media_url: str):
+        return None
+
+
 tweets = load_tweets()
 ids_dict = load_ids_dict()
 counter = 0
@@ -124,12 +149,19 @@ for tweet in tqdm(tweets):
                         break
             else:
                 image_path = f"{MEDIA_DIR}{tweet['id']}-{media['media_url_https'].split('/')[-1]}"
+            alt_text = fetch_alt_text(
+                media['expanded_url'], media['media_url_https'])
+            data = None
             file = open(image_path, "rb")
             data = file.read()
             url = f"{API_BASE_URL}/api/v2/media"
             files = {
                 "file": (image_path, data, "application/octet-stream")}
-            r = requests.post(url, files=files, headers=HEADERS)
+
+            data = None
+            if alt_text is not None:
+                data = {"description": alt_text}
+            r = requests.post(url, files=files, data=data, headers=HEADERS)
             json_data = r.json()
             media_ids.append(json_data["id"])
             toot["status"] = toot["status"].replace(media["url"], "")
