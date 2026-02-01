@@ -20,7 +20,6 @@ url = f"{API_BASE_URL}/api/v1/apps/verify_credentials"
 HEADERS = {"Authorization": f"Bearer {GTS_ACCESS_TOKEN}"}
 r = requests.get(url, headers=HEADERS)
 
-print(r)
 
 def post_status(data):
     HEADERS = {
