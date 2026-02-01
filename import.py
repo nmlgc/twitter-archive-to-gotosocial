@@ -109,53 +109,41 @@ for tweet in tqdm(tweets):
         # was already posted, we can skip it
         continue
     print(tweet)
-    try:
-        toot = tweet_to_toot(tweet)
-        if "media" in tweet["entities"]:
-            # upload media to append to the post
-            media_ids = []
-            for media in tweet["extended_entities"]["media"]:
-                image_path = None
-                if "video_info" in media:
-                    for variant in media['video_info']['variants']:
-                        basename = url_basename(variant['url'])
-                        variant_path = f"{MEDIA_DIR}{tweet['id']}-{basename}"
-                        if Path(variant_path).is_file():
-                            image_path = variant_path
-                            break
-                else:
-                    image_path = f"{MEDIA_DIR}{tweet['id']}-{media['media_url_https'].split('/')[-1]}"
-                file = open(image_path, "rb")
-                data = file.read()
-                url = f"{API_BASE_URL}/api/v2/media"
-                files = {
-                    "file": (image_path, data, "application/octet-stream")}
-                r = requests.post(url, files=files, headers=HEADERS)
-                json_data = r.json()
-                media_ids.append(json_data["id"])
-                toot["status"] = toot["status"].replace(media["url"], "")
-            toot["media_ids[]"] = media_ids
-        if (
-            "in_reply_to_screen_name" in tweet
-            and tweet["in_reply_to_screen_name"] == TWITTER_USERNAME
-        ):
-            # if Tweet is part of a thread, get ID if previous post
-            try:
-                toot["in_reply_to_id"] = ids_dict.get(
-                    tweet["in_reply_to_status_id"]
-                )
-            except:
-                print("======= FAILED!! ======= Error: ")
-                print(err)
-                pass
-        posted = post_status(toot)
-        print("POSTED!!")
-        print(posted)
-        ids_dict[tweet["id"]] = posted["id"]
-        save_ids_dict()
-    except Exception as err:
-        print("======= FAILED!! ======= Error: ")
-        print(err)
-        pass
+    toot = tweet_to_toot(tweet)
+    if "media" in tweet["entities"]:
+        # upload media to append to the post
+        media_ids = []
+        for media in tweet["extended_entities"]["media"]:
+            image_path = None
+            if "video_info" in media:
+                for variant in media['video_info']['variants']:
+                    basename = url_basename(variant['url'])
+                    variant_path = f"{MEDIA_DIR}{tweet['id']}-{basename}"
+                    if Path(variant_path).is_file():
+                        image_path = variant_path
+                        break
+            else:
+                image_path = f"{MEDIA_DIR}{tweet['id']}-{media['media_url_https'].split('/')[-1]}"
+            file = open(image_path, "rb")
+            data = file.read()
+            url = f"{API_BASE_URL}/api/v2/media"
+            files = {
+                "file": (image_path, data, "application/octet-stream")}
+            r = requests.post(url, files=files, headers=HEADERS)
+            json_data = r.json()
+            media_ids.append(json_data["id"])
+            toot["status"] = toot["status"].replace(media["url"], "")
+        toot["media_ids[]"] = media_ids
+    if (
+        "in_reply_to_screen_name" in tweet
+        and tweet["in_reply_to_screen_name"] == TWITTER_USERNAME
+    ):
+        # if Tweet is part of a thread, get ID if previous post
+        toot["in_reply_to_id"] = ids_dict.get(tweet["in_reply_to_status_id"])
+    posted = post_status(toot)
+    print("POSTED!!")
+    print(posted)
+    ids_dict[tweet["id"]] = posted["id"]
+    save_ids_dict()
 
 save_ids_dict()
