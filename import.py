@@ -1,5 +1,8 @@
+from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from tqdm import tqdm
+from typing import List
 from urllib.parse import urlparse
 import datetime
 import json
@@ -20,6 +23,13 @@ IDS_DICT_FN = "ids_dict.json"
 url = f"{API_BASE_URL}/api/v1/apps/verify_credentials"
 HEADERS = {"Authorization": f"Bearer {GTS_ACCESS_TOKEN}"}
 r = requests.get(url, headers=HEADERS)
+
+
+@dataclass
+class Poll:
+    count: int
+    labels: List[str]
+    votes: List[int]
 
 
 def post_status(data):
@@ -118,14 +128,43 @@ if NITTER_BASE_URL is not None:
         if not img:
             return ""
         return img.get("alt")
+
+    def fetch_poll(status_url: str):
+        bs = fetch_from_nitter(status_url)
+        if not bs:
+            return None
+        post = bs.find("div", class_="main-tweet")
+        if not post:
+            return None
+        div = post.find("div", class_="poll")
+        if not div:
+            return None
+        print(status_url)
+        info = div.find("span", class_="poll-info")
+        if not info:
+            return None
+        count = float(info.get_text().split()[0])
+        labels: List[str] = []
+        votes: List[int] = []
+        for opt in div.find_all("div", class_="poll-meter"):
+            labels.append(
+                opt.find("span", class_="poll-choice-option").get_text())
+            pct = float(opt.find(
+                "span", class_="poll-choice-value").get_text().split("%")[0])
+            votes.append(int(round((pct / 100.0) * count)))
+        return Poll(int(count), labels, votes)
 else:
     def fetch_alt_text(expanded_url: str, media_url: str):
+        return None
+
+    def fetch_poll(status_url: str):
         return None
 
 
 tweets = load_tweets()
 ids_dict = load_ids_dict()
 counter = 0
+tweets.reverse()
 
 for tweet in tqdm(tweets):
     print("Tweet number " + str(counter))
@@ -135,6 +174,11 @@ for tweet in tqdm(tweets):
         continue
     print(tweet)
     toot = tweet_to_toot(tweet)
+    poll = fetch_poll(f"/{TWITTER_USERNAME}/status/{tweet["id"]}")
+    created_at = datetime.datetime.strptime(
+        tweet["created_at"], "%a %b %d %H:%M:%S %z %Y")
+    created_at += datetime.timedelta(days=7)
+    created_at = created_at.strftime("%Y-%m-%d %H:%M:%S.00000+00:00")
     if "media" in tweet["entities"]:
         # upload media to append to the post
         media_ids = []
@@ -172,9 +216,32 @@ for tweet in tqdm(tweets):
     ):
         # if Tweet is part of a thread, get ID if previous post
         toot["in_reply_to_id"] = ids_dict.get(tweet["in_reply_to_status_id"])
+
+    # GoToSocial prevents the creation of backdated statuses with polls:
+    #
+    #   https://codeberg.org/superseriousbusiness/gotosocial/src/commit/c4f1988a30a013f132f98a84274583305c066c39/internal/processing/status/create.go#L249-L252
+    #
+    # But if you removed this condition in a custom build of the server, you could at least do the
+    # following…
+    #
+    # if poll:
+    #     toot["poll"] = {}
+    #     toot["poll"]["options"] = poll.labels
+    #     toot["poll"]["expires_in"] = 0
+    #
+    # …and then construct SQL queries with the returned poll ID (`posted["poll"]["id"]`).
+    # See https://rec98.nmlgc.net/blog/2026-03-16#polls-2026-03-16 for more info.
+
     posted = post_status(toot)
     print("POSTED!!")
     print(posted)
+
+    if poll:
+        print(f"Poll results for {tweet['id']} / {posted["id"]}:")
+        for (label, votes) in zip(poll.labels, poll.votes):
+            print(f"• {votes} {label}")
+        print(f"Total votes: {poll.count}")
+
     ids_dict[tweet["id"]] = posted["id"]
     save_ids_dict()
 

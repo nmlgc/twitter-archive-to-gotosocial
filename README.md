@@ -10,14 +10,17 @@ Progress is persisted in the form of a tweet→toot mapping in `ids_dict.json`, 
 
 When migrating archived Tweets to GoToSocial, this script will do the following:
 * Upload media, including videos
-* Optionally scraping alt text of images from the web frontend of a self-hosted Nitter instance
+* Optionally scraping alt text of images and poll data from the web frontend of a self-hosted
+  Nitter instance
 * t.co short URLs are replaced with their targets
 * Replace @username with @username@twitter.com
 * Threads are recreated as threads, though this is fragile; threads may sometimes have missing posts
 
 Limitations:
 * ⚠️ Private Twitter Circle tweets will become public toots!
-* I have no idea what happens if the script comes across a poll
+* Poll data is merely printed to stdout and require manual importing into the database since
+  GoToSocial (understandably) lacks any API to pre-fill poll results and even [prevents the
+  creation of backdated toots with polls].
 * Edit history isn't imported
 
 Using this script, I was successfully able to import 2,000+ tweets from all the way back in 2015.
@@ -36,7 +39,7 @@ Near the top of `import.py` are some variables you need to update:
 * `TWITTER_USERNAME` is your Twitter username (no @). This is used to track your threads.
 * `NITTER_BASE_URL` is the optional URL of a Nitter instance, which will be used for web-scraping
   any data that Twitter demonstrably stores but does not include in your data archive. Currently,
-  this category only includes alt text for images.
+  this category includes alt text for images and poll data.
   Someone from the EU should probably try suing Twitter for this rather selective interpretation of
   Art. 20 GDPR…\
   Since both the official <https://nitter.net> instance and all other tested [public instances]
@@ -54,4 +57,5 @@ After updating the configs and installing the dependencies, simply run `python3 
 
 The script will output Tweet data as it runs.
 
+[prevents the creation of backdated toots with polls]: https://codeberg.org/superseriousbusiness/gotosocial/src/commit/c4f1988a30a013f132f98a84274583305c066c39/internal/processing/status/create.go#L249-L252
 [public instances]: https://github.com/zedeus/nitter/wiki/Instances
